@@ -1,0 +1,202 @@
+{
+    "data": {
+      "attributes": {
+        "consumer": {
+          "productId": "pd",
+          "productName": "Professional Growth",
+          "url": "https://pg-plm-eem-api.use1.frontlineeducation.com/api/v1/import/user",
+          "objectType": "PgUserType",
+          "applicationMeta": {},
+          "processingOptions": {
+            "acceptValidationErrors": true,
+            "dryRun": true,
+            "partialImport": true
+          }
+        },
+        "fields": [
+          {
+            "type": "string",
+            "property": "EmployeeId",
+            "required": true,
+            "fieldName": "Staff ID",
+            "aliasNames": [],
+            "description": "The PG user's user identifier.",
+            "valueConstraints": [
+              {
+                "type": "notempty",
+                "value": true
+              }
+            ]
+          },
+          {
+            "fieldName": "Is Active",
+            "aliasNames": [
+              "active",
+              "status"
+            ],
+            "property": "Active",
+            "description": "Is the PG User Active?",
+            "required": true,
+            "type": "boolean",
+            "valueConstraints": [
+              {
+                "type": "notempty",
+                "value": true
+              }
+            ]
+          },
+          {
+            "type": "boolean",
+            "property": "IsInstructional",
+            "required": true,
+            "fieldName": "Certificate Holder",
+            "aliasNames": [
+              "Certified",
+              "IsInstructional",
+              "IsInstructor"
+            ],
+            "description": "Is the PG User certified?",
+            "valueConstraints": [
+              {
+                "type": "notempty",
+                "value": true
+              }
+            ]
+          },
+          {
+            "type": "boolean",
+            "property": "IsDistrictAdmin",
+            "required": true,
+            "fieldName": "District Administrator",
+            "aliasNames": [
+              "Admin",
+              "IsDistrictAdmin",
+              "IsAdmin"
+            ],
+            "description": "Is the PG User a District Admin?",
+            "valueConstraints": [
+              {
+                "type": "notempty",
+                "value": true
+              }
+            ]
+          },
+          {
+            "type": "boolean",
+            "property": "IsInstructor",
+            "required": true,
+            "fieldName": "Instructor",
+            "aliasNames": [
+              "IsInstructor",
+              "Instructor"
+            ],
+            "description": "Is the PG User an instructor?",
+            "valueConstraints": [
+              {
+                "type": "notempty",
+                "value": true
+              }
+            ]
+          },
+          {
+            "type": "string",
+            "property": "BuildingIds",
+            "required": false,
+            "fieldName": "Building ID(s)",
+            "aliasNames": [
+              "Location",
+              "Building",
+              "BuildingID",
+              "BuildingCode"
+            ],
+            "description": "The PG user's building code.",
+            "valueConstraints": []
+          },
+          {
+            "type": "string",
+            "property": "CertificateExpirationDate",
+            "required": false,
+            "fieldName": "Certificate Expiration Date",
+            "aliasNames": [
+              "CertificateExpirationDate",
+              "CertificateExpiration",
+              "LicenseExpirationDate"
+            ],
+            "description": "PG user's certificate expiration date.",
+            "valueConstraints": []
+          },
+          {
+            "type": "string",
+            "property": "CertificateId",
+            "required": false,
+            "fieldName": "Certificate ID",
+            "aliasNames": [
+              "StateCertID",
+              "CertificateID",
+              "StateID",
+              "CertID"
+            ],
+            "description": "PG user's certificate id.",
+            "valueConstraints": []
+          },
+          {
+            "type": "string",
+            "property": "CertificateInitialDate",
+            "required": false,
+            "fieldName": "Certificate Initial Date",
+            "aliasNames": [
+              "CertificateInitialDate"
+            ],
+            "description": "PG user's certificate initial date.",
+            "valueConstraints": []
+          },
+          {
+            "type": "string",
+            "property": "DepartmentIds",
+            "required": false,
+            "fieldName": "Department ID(s)",
+            "aliasNames": [
+              "DepartmentTitle",
+              "Department",
+              "DepartmentID",
+              "DepartmentCode"
+            ],
+            "description": "The PG user's department code.",
+            "valueConstraints": []
+          },
+          {
+            "type": "string",
+            "property": "GradeIds",
+            "required": false,
+            "fieldName": "Grade ID(s)",
+            "aliasNames": [
+              "Grade",
+              "GradeID",
+              "Grades",
+              "GradeLevel"
+            ],
+            "description": "PG user's grade code.",
+            "valueConstraints": []
+          },
+          {
+            "type": "string",
+            "property": "GroupIds",
+            "required": false,
+            "fieldName": "Group ID(s)",
+            "aliasNames": [
+              "Group",
+              "GroupID",
+              "Groups"
+            ],
+            "description": "PG user's group code.",
+            "valueConstraints": []
+          }
+        ],
+        "name": "PG Integrated User",
+        "description": "Used for importing miscellaneous PG user data",
+        "permissions": [
+          "Import_GD_Users_PG"
+        ]
+      }
+    }
+  }

@@ -1,0 +1,4045 @@
+openapi: 3.0.0
+info:
+  title: Platform Data Importer API
+  description: For consumers of the Platform Data Importer
+  version: 1.0.0
+externalDocs:
+  description: Find Platform Data Importer (PDI) documentation on Confluence
+  url: https://frontlinetechnologies.atlassian.net/wiki/spaces/PLAT/pages/482902106/Platform+Data+Importer+PDI
+servers:
+- url: http://localhost:5555
+  description: localhost
+- url: https://msvc-plat-data-import-stage.ss.frontlineeducation.com
+  description: Stage server (uses live data)
+- url: https://msvc-plat-data-import-qa.ss.frontlineeducation.com
+  description: QA server (uses test data)
+security:
+- Bearer: []
+- OrgIdQueryParam: []
+paths:
+  /api/health:
+    get:
+      summary: system health
+      operationId: apiHealthGET
+      responses:
+        "200":
+          description: a healthy service
+          content:
+            application/json: {}
+      x-swagger-router-controller: Default
+  /api/metrics:
+    get:
+      summary: system metrics
+      operationId: apiMetricsGET
+      responses:
+        "200":
+          description: metrics
+          content:
+            text/plain:
+              schema:
+                type: string
+                x-content-type: text/plain
+      x-swagger-router-controller: Default
+  /api/v1/emails:
+    post:
+      operationId: apiV1EmailsPOST
+      responses:
+        "200":
+          description: Order accepted
+          content:
+            application/json:
+              schema:
+                type: object
+                x-content-type: application/json
+      x-swagger-router-controller: Default
+  /api/v1/attempts/{attemptId}:
+    get:
+      tags:
+      - attempts
+      summary: Get details about a specific import attempt
+      operationId: apiV1AttemptsAttemptIdGET
+      parameters:
+      - name: attemptId
+        in: path
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+          example: 6c459fc6-0268-4d4d-a594-389213f319b3
+      responses:
+        "200":
+          description: Metadata about the import attempt
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Attempt'
+        "424":
+          description: There was an issue connecting to external service (e.g. DB
+            host)
+          content:
+            application/json:
+              schema:
+                type: object
+                x-content-type: application/json
+      x-swagger-router-controller: Attempts
+    post:
+      tags:
+      - attempts
+      summary: Validate and transmit import attempt
+      description: "Submits an Attempt to pre-consumer validation. If successful, 
+        \ the consumer will be notified along with details for consumption."
+      operationId: apiV1AttemptsAttemptIdPOST
+      parameters:
+      - name: attemptId
+        in: path
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+          example: 6c459fc6-0268-4d4d-a594-389213f319b3
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/body'
+      responses:
+        "200":
+          description: Order accepted
+          content:
+            application/json:
+              schema:
+                type: object
+                x-content-type: application/json
+        "422":
+          description: One or more import items have a validation error.
+          content:
+            application/json:
+              schema:
+                type: object
+                x-content-type: application/json
+        "424":
+          description: There was an issue connecting to external service (e.g. DB
+            host)
+          content:
+            application/json:
+              schema:
+                type: object
+                x-content-type: application/json
+      x-swagger-router-controller: Attempts
+    delete:
+      tags:
+      - attempts
+      summary: Delete an Attempt - (DI Internal Use Only)
+      operationId: apiV1AttemptsAttemptIdDELETE
+      parameters:
+      - name: attemptId
+        in: path
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+          example: 6c459fc6-0268-4d4d-a594-389213f319b3
+      responses:
+        "204":
+          description: Attempt was deleted (if found in db)
+        "424":
+          description: There was an issue connecting to external service (e.g. DB
+            host)
+          content:
+            application/json: {}
+      x-swagger-router-controller: Attempts
+    patch:
+      tags:
+      - attempts
+      summary: Update details about a specific import attempt
+      operationId: apiV1AttemptsAttemptIdPATCH
+      parameters:
+      - name: attemptId
+        in: path
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+          example: 6c459fc6-0268-4d4d-a594-389213f319b3
+      requestBody:
+        description: coming from AWS Lambda consumer-notify
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/body_1'
+      responses:
+        "200":
+          description: Metadata about the import attempt
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Attempt'
+        "424":
+          description: There was an issue connecting to external service (e.g. DB
+            host)
+          content:
+            application/json:
+              schema:
+                type: object
+                x-content-type: application/json
+      x-swagger-router-controller: Attempts
+  /api/v1/attempts/{attemptId}/annotatedfile:
+    get:
+      tags:
+      - attempts
+      summary: Returns annotated file with errors
+      description: Endpoint to retrieve file with annotated errors.
+      operationId: apiV1AttemptsAttemptIdAnnotatedfileGET
+      parameters:
+      - name: attemptId
+        in: path
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      - name: allItems
+        in: query
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: integer
+      - name: organizationId
+        in: query
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: string
+      - name: token
+        in: query
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: string
+      responses:
+        "200":
+          description: A CSV file
+          content:
+            text/csv:
+              schema:
+                type: object
+                x-content-type: text/csv
+        "424":
+          description: There was an issue connecting to external service (e.g. DB
+            host)
+          content:
+            text/csv:
+              schema:
+                type: object
+                x-content-type: text/csv
+      x-swagger-router-controller: Attempts
+  /api/v1/attempts/{attemptId}/errors:
+    get:
+      tags:
+      - attempts
+      summary: Returns errors
+      description: Endpoint to retrieve errors for an attempt. Will expire once import
+        items are archived.
+      operationId: apiV1AttemptsAttemptIdErrorsGET
+      parameters:
+      - name: attemptId
+        in: path
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      - name: limit
+        in: query
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: integer
+      - name: offset
+        in: query
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: integer
+      responses:
+        "200":
+          description: errors found in attempt
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AttemptErrors'
+        "404":
+          description: "In the future import messages may be archived, and this response
+            \ could indicate that this has happened; not that there were no errors
+            \ to begin with."
+          content:
+            application/json:
+              schema:
+                type: object
+                x-content-type: application/json
+        "424":
+          description: There was an issue connecting to external service (e.g. DB
+            host)
+          content:
+            application/json:
+              schema:
+                type: object
+                x-content-type: application/json
+      x-swagger-router-controller: Attempts
+  /api/v1/attempts/{attemptId}/items:
+    get:
+      tags:
+      - attempts
+      summary: Get the transformed data for the consuming application to import
+      operationId: apiV1AttemptsAttemptIdItemsGET
+      parameters:
+      - name: attemptId
+        in: path
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      - name: limit
+        in: query
+        required: false
+        style: form
+        explode: true
+        schema:
+          minimum: 1
+          type: integer
+      - name: offset
+        in: query
+        required: false
+        style: form
+        explode: true
+        schema:
+          minimum: 0
+          type: integer
+      - name: includeMessages
+        in: query
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: boolean
+      - name: unreported
+        in: query
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: boolean
+      - name: "filter_messagesource]"
+        in: query
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: string
+      responses:
+        "200":
+          description: The requested import data items
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AttemptItems'
+        "424":
+          description: There was an issue connecting to external service (e.g. DB
+            host)
+          content:
+            application/json:
+              schema:
+                type: object
+                x-content-type: application/json
+      x-swagger-router-controller: Attempts
+  /api/v1/attempts/{attemptId}/notify:
+    post:
+      tags:
+      - attempts
+      summary: Lambda telling API to notify the consumer
+      description: Endpoint for lambda to tell API to try and notify consumer of pending
+        import attempt
+      operationId: apiV1AttemptsAttemptIdNotifyPOST
+      parameters:
+      - name: attemptId
+        in: path
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      requestBody:
+        description: coming from AWS Lambda consumer-notify
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/body_2'
+      responses:
+        "200":
+          description: Consumer was notified
+          content:
+            application/json:
+              schema:
+                type: object
+                x-content-type: application/json
+        "404":
+          description: API unable to find record of related resource in DB (Attempt/Import
+            Type)
+          content:
+            application/json:
+              schema:
+                type: object
+                x-content-type: application/json
+        "424":
+          description: There was an issue connecting to external service (e.g. DB
+            host)
+          content:
+            application/json:
+              schema:
+                type: object
+                x-content-type: application/json
+      x-swagger-router-controller: Attempts
+  /api/v1/attempts/{attemptId}/process:
+    post:
+      tags:
+      - attempts
+      summary: Trigger the processing of the attempt file (pre-product validation)
+      description: Endpoint for the UI to trigger the processing of an attempt
+      operationId: apiV1AttemptsAttemptIdProcessPOST
+      parameters:
+      - name: attemptId
+        in: path
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      responses:
+        "200":
+          description: Status received
+          content:
+            application/json:
+              schema:
+                type: object
+                x-content-type: application/json
+        "424":
+          description: There was an issue connecting to external service (e.g. DB
+            host)
+          content:
+            application/json:
+              schema:
+                type: object
+                x-content-type: application/json
+      x-swagger-router-controller: Attempts
+  /api/v1/attempts/{attemptId}/status:
+    patch:
+      tags:
+      - attempts
+      summary: Update status for in-flight attempts
+      description: Endpoint for the consumer application to provide status for in-flight
+        attempts
+      operationId: apiV1AttemptsAttemptIdStatusPATCH
+      parameters:
+      - name: attemptId
+        in: path
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      requestBody:
+        description: In-flight status details
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/StatusRequestBody'
+        required: true
+      responses:
+        "200":
+          description: Status received
+          content:
+            application/json:
+              schema:
+                type: object
+                x-content-type: application/json
+        "424":
+          description: There was an issue connecting to external service (e.g. DB
+            host)
+          content:
+            application/json:
+              schema:
+                type: object
+                x-content-type: application/json
+      x-swagger-router-controller: Attempts
+  /api/v1/importtypes:
+    get:
+      tags:
+      - importtypes
+      summary: Get available import types
+      description: Returns the available import types accessible to the current user/organization
+      operationId: apiV1ImporttypesGET
+      parameters:
+      - name: productId
+        in: query
+        description: Product Id to filter import types by
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: string
+      responses:
+        "200":
+          description: Full list of import types
+          content:
+            application/json:
+              schema:
+                type: object
+                x-content-type: application/json
+        "424":
+          description: There was an issue connecting to external service (e.g. DB
+            host)
+          content:
+            application/json:
+              schema:
+                type: object
+                x-content-type: application/json
+      x-swagger-router-controller: Importtypes
+    post:
+      tags:
+      - importtypes
+      summary: Create/register a new import type
+      operationId: apiV1ImporttypesPOST
+      requestBody:
+        $ref: '#/components/requestBodies/ImportTypeRequestBody'
+      responses:
+        "201":
+          description: Confirmation object with ID of new import type
+          content:
+            application/json:
+              schema:
+                type: object
+                x-content-type: application/json
+        "404":
+          description: Entity (or related entity) cannot be found in db
+          content:
+            application/json:
+              schema:
+                type: object
+                x-content-type: application/json
+        "409":
+          description: Conflict. Cannot act due to a business rule.
+          content:
+            application/json:
+              schema:
+                type: object
+                x-content-type: application/json
+        "424":
+          description: There was an issue connecting to external service (e.g. DB
+            host)
+          content:
+            application/json:
+              schema:
+                type: object
+                x-content-type: application/json
+      x-swagger-router-controller: Importtypes
+  /api/v1/importtypes/{importTypeId}:
+    get:
+      tags:
+      - importtypes
+      summary: Get a specific import type
+      description: Get details about a specific import type
+      operationId: apiV1ImporttypesImportTypeIdGET
+      parameters:
+      - name: importTypeId
+        in: path
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+          format: uuid
+      responses:
+        "200":
+          description: The import type definition
+          content:
+            application/json:
+              schema:
+                type: object
+                x-content-type: application/json
+        "401":
+          description: Unauthorized to act on this resource
+          content:
+            application/json:
+              schema:
+                type: object
+                x-content-type: application/json
+        "404":
+          description: Entity (or related entity) cannot be found in db
+          content:
+            application/json:
+              schema:
+                type: object
+                x-content-type: application/json
+        "409":
+          description: Conflict. Cannot act due to a business rule.
+          content:
+            application/json:
+              schema:
+                type: object
+                x-content-type: application/json
+        "424":
+          description: There was an issue connecting to external service (e.g. DB
+            host)
+          content:
+            application/json:
+              schema:
+                type: object
+                x-content-type: application/json
+      x-swagger-router-controller: Importtypes
+    delete:
+      tags:
+      - importtypes
+      summary: Delete a specific import type
+      description: Remove/disable a specific import type
+      operationId: apiV1ImporttypesImportTypeIdDELETE
+      parameters:
+      - name: importTypeId
+        in: path
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+          format: uuid
+      responses:
+        "200":
+          description: The import type definition
+          content:
+            application/json:
+              schema:
+                type: object
+                x-content-type: application/json
+        "404":
+          description: Entity (or related entity) cannot be found in db
+          content:
+            application/json:
+              schema:
+                type: object
+                x-content-type: application/json
+        "424":
+          description: There was an issue connecting to external service (e.g. DB
+            host)
+          content:
+            application/json:
+              schema:
+                type: object
+                x-content-type: application/json
+      x-swagger-router-controller: Importtypes
+    patch:
+      tags:
+      - importtypes
+      summary: Update a specific import type
+      description: Allows the updating of an import type if it is not currently in
+        use by an active job/attempt
+      operationId: apiV1ImporttypesImportTypeIdPATCH
+      parameters:
+      - name: importTypeId
+        in: path
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+          format: uuid
+      - name: version
+        in: query
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: string
+      requestBody:
+        description: The import type definition
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ImportTypeRequestBody'
+        required: true
+      responses:
+        "200":
+          description: The import type definition
+          content:
+            application/json:
+              schema:
+                type: object
+                x-content-type: application/json
+        "404":
+          description: Entity (or related entity) cannot be found in db
+          content:
+            application/json:
+              schema:
+                type: object
+                x-content-type: application/json
+        "409":
+          description: Conflict. Cannot act due to a business rule.
+          content:
+            application/json:
+              schema:
+                type: object
+                x-content-type: application/json
+        "424":
+          description: There was an issue connecting to external service (e.g. DB
+            host)
+          content:
+            application/json:
+              schema:
+                type: object
+                x-content-type: application/json
+      x-swagger-router-controller: Importtypes
+  /api/v1/importtypes/{importTypeId}/template:
+    get:
+      tags:
+      - importtypes
+      summary: Download the CSV template for an import type
+      operationId: apiV1ImporttypesImportTypeIdTemplateGET
+      parameters:
+      - name: importTypeId
+        in: path
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      - name: saveAs
+        in: query
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: string
+      - name: organizationId
+        in: query
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: string
+      - name: token
+        in: query
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: string
+      responses:
+        "200":
+          description: A generated CSV template
+          content:
+            text/csv:
+              schema:
+                type: string
+                x-content-type: text/csv
+        "401":
+          description: Unauthorized to act on this resource
+          content:
+            text/csv:
+              schema:
+                type: object
+                x-content-type: text/csv
+        "404":
+          description: Entity (or related entity) cannot be found in db
+          content:
+            text/csv:
+              schema:
+                type: object
+                x-content-type: text/csv
+        "424":
+          description: There was an issue connecting to external service (e.g. DB
+            host)
+          content:
+            text/csv:
+              schema:
+                type: object
+                x-content-type: text/csv
+      x-swagger-router-controller: Importtypes
+  /api/v1/jobs:
+    get:
+      tags:
+      - jobs
+      summary: Get list of import jobs by orgId
+      operationId: apiV1JobsGET
+      parameters:
+      - name: fluser
+        in: header
+        description: The standard FlUser header included with all ssApiSvc calls
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      - name: organizationId
+        in: query
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: string
+      - name: limit
+        in: query
+        required: false
+        style: form
+        explode: true
+        schema:
+          maximum: 100
+          minimum: 1
+          type: integer
+          default: 25
+      - name: offset
+        in: query
+        required: false
+        style: form
+        explode: true
+        schema:
+          minimum: 0
+          type: integer
+          default: 0
+      - name: sort
+        in: query
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: string
+          default: -job_import_date
+          enum:
+          - -job_created_at
+          - job_created_at
+          - -job_import_date
+          - job_import_date
+          - -file_original_filename
+          - file_original_filename
+      - name: "filter_jobtemplate]"
+        in: query
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: string
+      - name: "filter_product]"
+        in: query
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: string
+      - name: "filter_status]"
+        in: query
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: string
+      - name: "filter_importtype]"
+        in: query
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: string
+      - name: filename
+        in: query
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: string
+      responses:
+        "200":
+          description: Import jobs found
+          content:
+            application/json:
+              schema:
+                type: object
+                x-content-type: application/json
+      x-swagger-router-controller: Jobs
+    post:
+      tags:
+      - jobs
+      summary: Create a new import job
+      operationId: apiV1JobsPOST
+      parameters:
+      - name: fluser
+        in: header
+        description: The standard FlUser header included with all ssApiSvc calls
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/body_3'
+      responses:
+        "201":
+          description: Import job created successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                x-content-type: application/json
+        "401":
+          description: Unauthorized to act on this resource
+          content:
+            application/json:
+              schema:
+                type: object
+                x-content-type: application/json
+        "404":
+          description: Entity (or related entity) cannot be found in db
+          content:
+            application/json:
+              schema:
+                type: object
+                x-content-type: application/json
+        "424":
+          description: There was an issue connecting to external service (e.g. DB
+            host)
+          content:
+            application/json:
+              schema:
+                type: object
+                x-content-type: application/json
+      x-swagger-router-controller: Jobs
+  /api/v1/jobs/{jobId}:
+    get:
+      tags:
+      - jobs
+      summary: Get details about a specific import job
+      operationId: apiV1JobsJobIdGET
+      parameters:
+      - name: jobId
+        in: path
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      - name: includes
+        in: query
+        description: For development purposes only
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: string
+      responses:
+        "200":
+          description: Details about a specific import job
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Job'
+        "401":
+          description: Unauthorized to act on this resource
+          content:
+            application/json:
+              schema:
+                type: object
+                x-content-type: application/json
+        "404":
+          description: Entity (or related entity) cannot be found in db
+          content:
+            application/json:
+              schema:
+                type: object
+                x-content-type: application/json
+        "424":
+          description: There was an issue connecting to external service (e.g. DB
+            host)
+          content:
+            application/json:
+              schema:
+                type: object
+                x-content-type: application/json
+      x-swagger-router-controller: Jobs
+    delete:
+      tags:
+      - jobs
+      summary: Delete a Job (DI Internal Use Only)
+      operationId: apiV1JobsJobIdDELETE
+      parameters:
+      - name: jobId
+        in: path
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      responses:
+        "204":
+          description: Job was deleted if found in db
+        "401":
+          description: Unauthorized to act on this resource
+          content:
+            application/json:
+              schema:
+                type: object
+                x-content-type: application/json
+        "403":
+          description: Job cannot be deleted due to a business rule
+          content:
+            application/json:
+              schema:
+                type: object
+                x-content-type: application/json
+        "404":
+          description: Job not found in db
+          content:
+            application/json:
+              schema:
+                type: object
+                x-content-type: application/json
+        "424":
+          description: There was an issue connecting to external service (e.g. DB
+            host)
+          content:
+            application/json:
+              schema:
+                type: object
+                x-content-type: application/json
+      x-swagger-router-controller: Jobs
+    patch:
+      tags:
+      - jobs
+      summary: Update an import job
+      operationId: apiV1JobsJobIdPATCH
+      parameters:
+      - name: jobId
+        in: path
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      - name: fluser
+        in: header
+        description: The standard FlUser header included with all ssApiSvc calls
+        required: false
+        style: simple
+        explode: false
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/body_4'
+      responses:
+        "200":
+          description: The updated import job
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Job'
+        "401":
+          description: Unauthorized to act on this resource
+          content:
+            application/json:
+              schema:
+                type: object
+                x-content-type: application/json
+        "409":
+          description: Request attempted to update fields that it could not update
+            or do not satisfy business rules (e.g. scheduledFor in past.)
+          content:
+            application/json:
+              schema:
+                type: object
+                x-content-type: application/json
+        "424":
+          description: There was an issue connecting to external service (e.g. DB
+            host)
+          content:
+            application/json:
+              schema:
+                type: object
+                x-content-type: application/json
+      x-swagger-router-controller: Jobs
+  /api/v1/jobs/{jobId}/schedule:
+    post:
+      tags:
+      - jobs
+      summary: Schedule an import job
+      operationId: apiV1JobsJobIdSchedulePOST
+      parameters:
+      - name: jobId
+        in: path
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      responses:
+        "200":
+          description: Upload successful
+          content:
+            application/json:
+              schema:
+                type: object
+                x-content-type: application/json
+      x-swagger-router-controller: Jobs
+  /api/v1/jobs/{jobId}/upload:
+    post:
+      tags:
+      - jobs
+      summary: Upload a CSV file
+      operationId: apiV1JobsJobIdUploadPOST
+      parameters:
+      - name: jobId
+        in: path
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      responses:
+        "200":
+          description: Upload successful
+          content:
+            application/json:
+              schema:
+                type: object
+                x-content-type: application/json
+        "400":
+          description: File not found or unparsable
+          content:
+            application/json:
+              schema:
+                type: object
+                x-content-type: application/json
+        "401":
+          description: Unauthorized to act on this resource
+          content:
+            application/json:
+              schema:
+                type: object
+                x-content-type: application/json
+        "409":
+          description: Conflict. Cannot act due to a business rule.
+          content:
+            application/json:
+              schema:
+                type: object
+                x-content-type: application/json
+        "413":
+          description: Entity too large (filesize)
+          content:
+            application/json:
+              schema:
+                type: object
+                x-content-type: application/json
+        "415":
+          description: "Invalid request type (unsupported Media Type e.g. file extension,
+            \ MIME type)"
+          content:
+            application/json:
+              schema:
+                type: object
+                x-content-type: application/json
+        "422":
+          description: Upload contains errors
+          content:
+            application/json:
+              schema:
+                type: object
+                x-content-type: application/json
+        "424":
+          description: There was an issue connecting to external service (e.g. DB
+            host)
+          content:
+            application/json:
+              schema:
+                type: object
+                x-content-type: application/json
+        "500":
+          description: Error occurred during file processing
+          content:
+            application/json:
+              schema:
+                type: object
+                x-content-type: application/json
+      x-swagger-router-controller: Jobs
+  /api/v1/jobs/{jobId}/upload-async:
+    post:
+      tags:
+      - jobs
+      summary: Upload a CSV file
+      operationId: apiV1JobsJobIdUpload_asyncPOST
+      parameters:
+      - name: jobId
+        in: path
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      responses:
+        "200":
+          description: Upload successful
+          content:
+            application/json:
+              schema:
+                type: object
+                x-content-type: application/json
+        "400":
+          description: File not found or unparsable
+          content:
+            application/json:
+              schema:
+                type: object
+                x-content-type: application/json
+        "401":
+          description: Unauthorized to act on this resource
+          content:
+            application/json:
+              schema:
+                type: object
+                x-content-type: application/json
+        "409":
+          description: Conflict. Cannot act due to a business rule.
+          content:
+            application/json:
+              schema:
+                type: object
+                x-content-type: application/json
+        "413":
+          description: Entity too large (filesize)
+          content:
+            application/json:
+              schema:
+                type: object
+                x-content-type: application/json
+        "415":
+          description: "Invalid request type (unsupported Media Type e.g. file extension,
+            \ MIME type)"
+          content:
+            application/json:
+              schema:
+                type: object
+                x-content-type: application/json
+        "422":
+          description: Upload contains errors
+          content:
+            application/json:
+              schema:
+                type: object
+                x-content-type: application/json
+        "424":
+          description: There was an issue connecting to external service (e.g. DB
+            host)
+          content:
+            application/json:
+              schema:
+                type: object
+                x-content-type: application/json
+        "500":
+          description: Error occurred during file processing
+          content:
+            application/json:
+              schema:
+                type: object
+                x-content-type: application/json
+      x-swagger-router-controller: Jobs
+  /api/v1/jobtemplates:
+    get:
+      tags:
+      - jobtemplates
+      summary: Get list of import job templates by orgId
+      operationId: apiV1JobtemplatesGET
+      parameters:
+      - name: fluser
+        in: header
+        description: The standard FlUser header included with all ssApiSvc calls
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      - name: organizationId
+        in: query
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: string
+      - name: limit
+        in: query
+        required: false
+        style: form
+        explode: true
+        schema:
+          maximum: 100
+          minimum: 1
+          type: integer
+          default: 25
+      - name: offset
+        in: query
+        required: false
+        style: form
+        explode: true
+        schema:
+          minimum: 0
+          type: integer
+          default: 0
+      - name: "filter_product]"
+        in: query
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: string
+      - name: "filter_importtype]"
+        in: query
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: string
+      responses:
+        "200":
+          description: Import jobtemplates found
+          content:
+            application/json:
+              schema:
+                type: object
+                x-content-type: application/json
+      x-swagger-router-controller: Jobtemplates
+    post:
+      tags:
+      - jobtemplates
+      summary: Create a new import job template
+      operationId: apiV1JobtemplatesPOST
+      parameters:
+      - name: fluser
+        in: header
+        description: The standard FlUser header included with all ssApiSvc calls
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      requestBody:
+        $ref: '#/components/requestBodies/Data'
+      responses:
+        "201":
+          description: Job template created successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                x-content-type: application/json
+        "401":
+          description: Unauthorized to act on this resource
+          content:
+            application/json:
+              schema:
+                type: object
+                x-content-type: application/json
+        "404":
+          description: Entity (or related entity) cannot be found in db
+          content:
+            application/json:
+              schema:
+                type: object
+                x-content-type: application/json
+        "424":
+          description: There was an issue connecting to external service (e.g. DB
+            host)
+          content:
+            application/json:
+              schema:
+                type: object
+                x-content-type: application/json
+      x-swagger-router-controller: Jobtemplates
+  /api/v1/jobtemplates/{jobTemplateId}:
+    get:
+      tags:
+      - jobtemplates
+      summary: Get a specific job template
+      description: Get details about a specific job template
+      operationId: apiV1JobtemplatesJobTemplateIdGET
+      parameters:
+      - name: jobTemplateId
+        in: path
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      responses:
+        "200":
+          description: The job template definition
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/JobTemplateResponse'
+        "401":
+          description: Unauthorized to act on this resource
+          content:
+            application/json:
+              schema:
+                type: object
+                x-content-type: application/json
+        "404":
+          description: Entity (or related entity) cannot be found in db
+          content:
+            application/json:
+              schema:
+                type: object
+                x-content-type: application/json
+        "409":
+          description: Conflict. Cannot act due to a business rule.
+          content:
+            application/json:
+              schema:
+                type: object
+                x-content-type: application/json
+        "424":
+          description: There was an issue connecting to external service (e.g. DB
+            host)
+          content:
+            application/json:
+              schema:
+                type: object
+                x-content-type: application/json
+      x-swagger-router-controller: Jobtemplates
+    post:
+      tags:
+      - jobtemplates
+      summary: Create a new import job from jobtemplate (service-to-service)
+      operationId: apiV1JobtemplatesJobTemplateIdPOST
+      parameters:
+      - name: jobTemplateId
+        in: path
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      - name: fluser
+        in: header
+        description: The standard FlUser header included with all ssApiSvc calls
+        required: false
+        style: simple
+        explode: false
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+        required: true
+      responses:
+        "201":
+          description: Job created successfully. A minimal job is returned. Cannot
+            use schema for Job because $job.createAndSave does not have the fully
+            populated importType which results in a productName of null. We dont want
+            to deal with overhead required to do the additional db lookup since this
+            response is only consumed by Lambda.
+          content:
+            application/json:
+              schema:
+                type: object
+                x-content-type: application/json
+        "204":
+          description: Job already created. Successful response returned to Lambda
+            with no content so that the message can be removed from the queue.
+        "401":
+          description: Unauthorized to act on this resource
+          content:
+            application/json:
+              schema:
+                type: object
+                x-content-type: application/json
+        "404":
+          description: Entity (or related entity) cannot be found in db
+          content:
+            application/json:
+              schema:
+                type: object
+                x-content-type: application/json
+        "424":
+          description: There was an issue connecting to external service (e.g. DB
+            host)
+          content:
+            application/json:
+              schema:
+                type: object
+                x-content-type: application/json
+      x-swagger-router-controller: Jobtemplates
+    delete:
+      tags:
+      - jobtemplates
+      summary: Delete (deactivate) a job template
+      operationId: apiV1JobtemplatesJobTemplateIdDELETE
+      parameters:
+      - name: jobTemplateId
+        in: path
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      responses:
+        "204":
+          description: Job template was deleted (if found in db)
+        "424":
+          description: There was an issue connecting to external service (e.g. DB
+            host)
+          content:
+            application/json:
+              schema:
+                type: object
+                x-content-type: application/json
+      x-swagger-router-controller: Jobtemplates
+    patch:
+      tags:
+      - jobtemplates
+      summary: Update a specific job template
+      description: Allows the updating of a job template
+      operationId: apiV1JobtemplatesJobTemplateIdPATCH
+      parameters:
+      - name: jobTemplateId
+        in: path
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+        required: true
+      responses:
+        "200":
+          description: The updated job template definition
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/JobTemplateResponse'
+        "404":
+          description: Entity (or related entity) cannot be found in db
+          content:
+            application/json:
+              schema:
+                type: object
+                x-content-type: application/json
+        "409":
+          description: Conflict. Cannot act due to a business rule.
+          content:
+            application/json:
+              schema:
+                type: object
+                x-content-type: application/json
+        "424":
+          description: There was an issue connecting to external service (e.g. DB
+            host)
+          content:
+            application/json:
+              schema:
+                type: object
+                x-content-type: application/json
+      x-swagger-router-controller: Jobtemplates
+  /api/v1/jobtemplates/{jobTemplateId}/runNow:
+    post:
+      tags:
+      - jobtemplates
+      summary: Run an import based on the job template
+      operationId: apiV1JobtemplatesJobTemplateIdRunNowPOST
+      parameters:
+      - name: jobTemplateId
+        in: path
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      - name: fluser
+        in: header
+        description: The standard FlUser header included with all ssApiSvc calls
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      responses:
+        "200":
+          description: Job template has run successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                x-content-type: application/json
+        "401":
+          description: Unauthorized to act on this resource
+          content:
+            application/json:
+              schema:
+                type: object
+                x-content-type: application/json
+        "404":
+          description: Entity (or related entity) cannot be found in db
+          content:
+            application/json:
+              schema:
+                type: object
+                x-content-type: application/json
+        "424":
+          description: There was an issue connecting to external service (e.g. DB
+            host)
+          content:
+            application/json:
+              schema:
+                type: object
+                x-content-type: application/json
+      x-swagger-router-controller: Jobtemplates
+  /api/v1/jobtemplates/{jobTemplateId}/pause:
+    post:
+      tags:
+      - jobtemplates
+      summary: Pause job creation from the job template
+      operationId: apiV1JobtemplatesJobTemplateIdPausePOST
+      parameters:
+      - name: jobTemplateId
+        in: path
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      - name: fluser
+        in: header
+        description: The standard FlUser header included with all ssApiSvc calls
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      responses:
+        "200":
+          description: Job template source validated successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                x-content-type: application/json
+        "401":
+          description: Unauthorized to act on this resource
+          content:
+            application/json:
+              schema:
+                type: object
+                x-content-type: application/json
+        "404":
+          description: Entity (or related entity) cannot be found in db
+          content:
+            application/json:
+              schema:
+                type: object
+                x-content-type: application/json
+        "424":
+          description: There was an issue connecting to external service (e.g. DB
+            host)
+          content:
+            application/json:
+              schema:
+                type: object
+                x-content-type: application/json
+      x-swagger-router-controller: Jobtemplates
+  /api/v1/jobtemplates/{jobTemplateId}/skip:
+    post:
+      tags:
+      - jobtemplates
+      summary: Advance job template next run date/time to the next scheduled
+      operationId: apiV1JobtemplatesJobTemplateIdSkipPOST
+      parameters:
+      - name: jobTemplateId
+        in: path
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      - name: fluser
+        in: header
+        description: The standard FlUser header included with all ssApiSvc calls
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      responses:
+        "200":
+          description: Job template source validated successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                x-content-type: application/json
+        "401":
+          description: Unauthorized to act on this resource
+          content:
+            application/json:
+              schema:
+                type: object
+                x-content-type: application/json
+        "404":
+          description: Entity (or related entity) cannot be found in db
+          content:
+            application/json:
+              schema:
+                type: object
+                x-content-type: application/json
+        "424":
+          description: There was an issue connecting to external service (e.g. DB
+            host)
+          content:
+            application/json:
+              schema:
+                type: object
+                x-content-type: application/json
+      x-swagger-router-controller: Jobtemplates
+  /api/v1/jobtemplates/{jobTemplateId}/unpause:
+    post:
+      tags:
+      - jobtemplates
+      summary: Re-enable job creation from the job template
+      operationId: apiV1JobtemplatesJobTemplateIdUnpausePOST
+      parameters:
+      - name: jobTemplateId
+        in: path
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      - name: fluser
+        in: header
+        description: The standard FlUser header included with all ssApiSvc calls
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      responses:
+        "200":
+          description: Job template source validated successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                x-content-type: application/json
+        "401":
+          description: Unauthorized to act on this resource
+          content:
+            application/json:
+              schema:
+                type: object
+                x-content-type: application/json
+        "404":
+          description: Entity (or related entity) cannot be found in db
+          content:
+            application/json:
+              schema:
+                type: object
+                x-content-type: application/json
+        "424":
+          description: There was an issue connecting to external service (e.g. DB
+            host)
+          content:
+            application/json:
+              schema:
+                type: object
+                x-content-type: application/json
+      x-swagger-router-controller: Jobtemplates
+  /api/v1/jobtemplates/{jobTemplateId}/validatesource:
+    post:
+      tags:
+      - jobtemplates
+      summary: Validate the FTP source of the job template
+      operationId: apiV1JobtemplatesJobTemplateIdValidatesourcePOST
+      parameters:
+      - name: jobTemplateId
+        in: path
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      - name: fluser
+        in: header
+        description: The standard FlUser header included with all ssApiSvc calls
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      - name: dirOnly
+        in: query
+        description: Verify that the organization has a folder to store associated
+          file uploads in
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: boolean
+      responses:
+        "200":
+          description: Job template source validated successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                x-content-type: application/json
+        "401":
+          description: Unauthorized to act on this resource
+          content:
+            application/json:
+              schema:
+                type: object
+                x-content-type: application/json
+        "404":
+          description: File or Directory not found on SFTP server
+          content:
+            application/json:
+              schema:
+                type: object
+                x-content-type: application/json
+        "422":
+          description: "There were problems with the files contents (missing required
+            \ headers, or file was unable to be processed)"
+          content:
+            application/json:
+              schema:
+                type: object
+                x-content-type: application/json
+        "424":
+          description: There was an issue connecting to external service (e.g. DB
+            host)
+          content:
+            application/json:
+              schema:
+                type: object
+                x-content-type: application/json
+      x-swagger-router-controller: Jobtemplates
+  /api/v1/jobtemplates/{jobTemplateId}/watchers:
+    get:
+      tags:
+      - jobtemplates
+      summary: Add email subscription to job template watchers list
+      operationId: apiV1JobtemplatesJobTemplateIdWatchersGET
+      parameters:
+      - name: jobTemplateId
+        in: path
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      - name: fluser
+        in: header
+        description: The standard FlUser header included with all ssApiSvc calls
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      responses:
+        "200":
+          description: Users watching this job template
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/JobTemplateWatchersResponse'
+        "401":
+          description: Unauthorized to act on this resource
+          content:
+            application/json:
+              schema:
+                type: object
+                x-content-type: application/json
+        "404":
+          description: Entity (or related entity) cannot be found in db
+          content:
+            application/json:
+              schema:
+                type: object
+                x-content-type: application/json
+        "424":
+          description: There was an issue connecting to external service (e.g. DB
+            host)
+          content:
+            application/json:
+              schema:
+                type: object
+                x-content-type: application/json
+      x-swagger-router-controller: Jobtemplates
+    post:
+      tags:
+      - jobtemplates
+      summary: Add email subscription to job template watchers list
+      operationId: apiV1JobtemplatesJobTemplateIdWatchersPOST
+      parameters:
+      - name: jobTemplateId
+        in: path
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      - name: fluser
+        in: header
+        description: The standard FlUser header included with all ssApiSvc calls
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      responses:
+        "200":
+          description: Added user as watcher to Job template successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/JobTemplateWatchersResponse'
+        "401":
+          description: Unauthorized to act on this resource
+          content:
+            application/json:
+              schema:
+                type: object
+                x-content-type: application/json
+        "404":
+          description: Entity (or related entity) cannot be found in db
+          content:
+            application/json:
+              schema:
+                type: object
+                x-content-type: application/json
+        "424":
+          description: There was an issue connecting to external service (e.g. DB
+            host)
+          content:
+            application/json:
+              schema:
+                type: object
+                x-content-type: application/json
+      x-swagger-router-controller: Jobtemplates
+    delete:
+      tags:
+      - jobtemplates
+      summary: Remove email subscription from job template watchers list
+      operationId: apiV1JobtemplatesJobTemplateIdWatchersDELETE
+      parameters:
+      - name: jobTemplateId
+        in: path
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      - name: fluser
+        in: header
+        description: The standard FlUser header included with all ssApiSvc calls
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      responses:
+        "200":
+          description: Removed user as watcher from Job template successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/JobTemplateWatchersResponse'
+        "401":
+          description: Unauthorized to act on this resource
+          content:
+            application/json:
+              schema:
+                type: object
+                x-content-type: application/json
+        "404":
+          description: Entity (or related entity) cannot be found in db
+          content:
+            application/json:
+              schema:
+                type: object
+                x-content-type: application/json
+        "424":
+          description: There was an issue connecting to external service (e.g. DB
+            host)
+          content:
+            application/json:
+              schema:
+                type: object
+                x-content-type: application/json
+      x-swagger-router-controller: Jobtemplates
+  /api/v1/operations:
+    get:
+      tags:
+      - operations
+      summary: Poll the status of active operations
+      operationId: apiV1OperationsGET
+      parameters:
+      - name: organizationId
+        in: query
+        required: true
+        style: form
+        explode: true
+        schema:
+          minItems: 1
+          uniqueItems: true
+          type: array
+          items:
+            type: string
+      responses:
+        "200":
+          description: A list of filtered operation status objects
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/inline_response_200'
+      x-swagger-router-controller: Operations
+  /api/v1/operations/attemptstatus/{attemptId}:
+    get:
+      tags:
+      - operations
+      summary: Get status of a specific attempt
+      operationId: apiV1OperationsAttemptstatusAttemptIdGET
+      parameters:
+      - name: attemptId
+        in: path
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      responses:
+        "200":
+          description: Attempt status details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/inline_response_200_1'
+        "404":
+          description: Entity (or related entity) cannot be found in db
+          content:
+            application/json:
+              schema:
+                type: object
+                x-content-type: application/json
+        "424":
+          description: There was an issue connecting to external service (e.g. DB
+            host)
+          content:
+            application/json:
+              schema:
+                type: object
+                x-content-type: application/json
+      x-swagger-router-controller: Operations
+  /api/v1/organizations/{organizationId}/sftp:
+    get:
+      tags:
+      - organizations
+      summary: Validate the SFTP source directory
+      operationId: apiV1OrganizationsOrganizationIdSftpGET
+      parameters:
+      - name: organizationId
+        in: path
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      - name: fluser
+        in: header
+        description: The standard FlUser header included with all ssApiSvc calls
+        required: false
+        style: simple
+        explode: false
+        schema:
+          type: string
+      responses:
+        "200":
+          description: The organization's SFTP Directory was found on SFTP server
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrganizationFeatures'
+        "401":
+          description: Unauthorized to act on this resource
+          content:
+            application/json:
+              schema:
+                type: object
+                x-content-type: application/json
+        "404":
+          description: Directory not found on SFTP server
+          content:
+            application/json:
+              schema:
+                type: object
+                x-content-type: application/json
+        "424":
+          description: There was an issue connecting to external service (e.g. DB
+            host)
+          content:
+            application/json:
+              schema:
+                type: object
+                x-content-type: application/json
+      x-swagger-router-controller: Organizations
+  /api/consumer:
+    post:
+      tags:
+      - consumer
+      summary: "FOR DEMO/TEST- Pretends to be a consumer application getting import
+        \ data, doing validation, and calling appropriate endpoints"
+      operationId: apiConsumerPOST
+      parameters:
+      - name: authorization
+        in: header
+        description: The standard Auth header with bearer token.
+        required: false
+        style: simple
+        explode: false
+        schema:
+          type: string
+      - name: fluser
+        in: header
+        description: The standard FlUser header included with all ssApiSvc calls
+        required: false
+        style: simple
+        explode: false
+        schema:
+          type: string
+      requestBody:
+        description: The import attempt object
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Attempt'
+      responses:
+        "200":
+          description: Confirmation that notification of import attempt event was
+            received
+          content:
+            application/json:
+              schema:
+                type: object
+                x-content-type: application/json
+      x-swagger-router-controller: Consumer
+components:
+  schemas:
+    AnyValue:
+      description: "Can be any value - string, number, boolean, array or object."
+      anyOf:
+      - type: string
+      - type: number
+      - type: integer
+      - type: boolean
+      - type: array
+        items: {}
+      - type: object
+    Attempt:
+      required:
+      - data
+      - links
+      - meta
+      type: object
+      properties:
+        data:
+          $ref: '#/components/schemas/Attempt_data'
+        links:
+          $ref: '#/components/schemas/Attempt_links'
+        meta:
+          $ref: '#/components/schemas/Attempt_meta'
+      example:
+        data:
+          attributes:
+            itemCountError: 1
+            createdAt: {}
+            file: {}
+            createdBy: USER_ID
+            itemCountTotal: 10
+            itemCountSuccess: 9
+            status: status
+          id: 9b92455b-003c-4e7c-86c3-476e0698d406
+          type: importAttempt
+        meta:
+          importType:
+            importTypeId: a81a6d39-1d6a-400b-af23-0ef08ea2d4c3
+            configId: b12878e2-683c-4158-8a21-f8827bd77c44
+            name: Job Type
+            consumer:
+              applicationMeta: {}
+              objectType: JobType
+          job:
+            organizationId: organizationId
+            jobId: jobId
+            createdAt: {}
+            jobMeta:
+              jobTemplateDeleted: true
+              runAt: {}
+              filename: DiConsumerSuccess-fb1e9b.csv
+              errorMessage: errorMessage
+              errorCode: ERR_FILE_NOT_PARSABLE
+              errorStatusCode: 0.80082819046101150206595775671303272247314453125
+              user:
+                firstName: firstName
+                lastName: lastName
+            createdBy: createdBy
+            importDate: {}
+            scheduledFor: {}
+            jobTemplateId: jobTemplateId
+        links:
+          importType: https://msvc-plat-data-import.ss.frontlineeducation.com/api/v1/importtypes/a81a6d39-1d6a-400b-af23-0ef08ea2d4c3
+          self: https://msvc-plat-data-import.ss.frontlineeducation.com/api/v1/attempts/9b92455b-003c-4e7c-86c3-476e0698d406
+          items: https://msvc-plat-data-import.ss.frontlineeducation.com/api/v1/attempts/9b92455b-003c-4e7c-86c3-476e0698d406/items
+          status: https://msvc-plat-data-import.ss.frontlineeducation.com/api/v1/attempts/9b92455b-003c-4e7c-86c3-476e0698d406/status
+    AttemptErrorSingle:
+      type: object
+      properties:
+        attributes:
+          $ref: '#/components/schemas/AttemptErrorSingle_attributes'
+        type:
+          type: string
+      example:
+        attributes:
+          messages:
+          - messages
+          - messages
+          rowNumber: 0
+        type: type
+    AttemptErrors:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/AttemptErrorSingle'
+        links:
+          $ref: '#/components/schemas/AttemptErrors_links'
+        meta:
+          $ref: '#/components/schemas/AttemptErrors_meta'
+      example:
+        data:
+        - attributes:
+            messages:
+            - messages
+            - messages
+            rowNumber: 0
+          type: type
+        - attributes:
+            messages:
+            - messages
+            - messages
+            rowNumber: 0
+          type: type
+        meta:
+          totalErrors: 6
+          attemptId: attemptId
+        links:
+          self: self
+    AttemptItemSingle:
+      type: object
+      properties:
+        type:
+          type: string
+          example: attemptItem
+        id:
+          type: string
+          example: 0c4c421e-c1f5-4711-9d16-7599f8f0b2bf
+        attributes:
+          $ref: '#/components/schemas/AttemptItemSingle_attributes'
+      example:
+        attributes:
+          valueRaw:
+            firstName: Bob
+            lastName: Smith
+            age: "54"
+            employee: "Y"
+          messages:
+          - severity: severity
+            property: FIRST_NAME
+            source: source
+            message: message
+          - severity: severity
+            property: FIRST_NAME
+            source: source
+            message: message
+          rowNumber: 2
+          value:
+            firstName: Bob
+            lastName: Smith
+            age: 54
+            employee: true
+          status: item-import-success
+        id: 0c4c421e-c1f5-4711-9d16-7599f8f0b2bf
+        type: attemptItem
+    AttemptItems:
+      type: object
+      properties:
+        meta:
+          $ref: '#/components/schemas/AttemptItems_meta'
+        links:
+          $ref: '#/components/schemas/AttemptItems_links'
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/AttemptItemSingle'
+      example:
+        data:
+        - attributes:
+            valueRaw:
+              firstName: Bob
+              lastName: Smith
+              age: "54"
+              employee: "Y"
+            messages:
+            - severity: severity
+              property: FIRST_NAME
+              source: source
+              message: message
+            - severity: severity
+              property: FIRST_NAME
+              source: source
+              message: message
+            rowNumber: 2
+            value:
+              firstName: Bob
+              lastName: Smith
+              age: 54
+              employee: true
+            status: item-import-success
+          id: 0c4c421e-c1f5-4711-9d16-7599f8f0b2bf
+          type: attemptItem
+        - attributes:
+            valueRaw:
+              firstName: Bob
+              lastName: Smith
+              age: "54"
+              employee: "Y"
+            messages:
+            - severity: severity
+              property: FIRST_NAME
+              source: source
+              message: message
+            - severity: severity
+              property: FIRST_NAME
+              source: source
+              message: message
+            rowNumber: 2
+            value:
+              firstName: Bob
+              lastName: Smith
+              age: 54
+              employee: true
+            status: item-import-success
+          id: 0c4c421e-c1f5-4711-9d16-7599f8f0b2bf
+          type: attemptItem
+        meta:
+          organizationId: "123456"
+          importType:
+            importTypeId: a81a6d39-1d6a-400b-af23-0ef08ea2d4c3
+            configId: b12878e2-683c-4158-8a21-f8827bd77c44
+            name: Job Type
+            consumer:
+              applicationMeta: {}
+              objectType: JobType
+          itemsCountErrors: 1
+          itemsCount: 1
+          attemptId: f04b4046-c7ae-4011-9a25-56819634cf7b
+        links:
+          importType: https://msvc-plat-data-import-stage.ss.frontlineeducation.com/api/v1/importtypes/5821ff9a-2cb5-4f3b-b460-d8dcf6876e7d?configId=92df7324-8a07-4a10-b280-bed4d7ac92ef
+          unreported: https://msvc-plat-data-import-stage.ss.frontlineeducation.com/api/v1/attempts/f04b4046-c7ae-4011-9a25-56819634cf7b/items?unreported=true
+          self: https://msvc-plat-data-import-stage.ss.frontlineeducation.com/api/v1/attempts/f04b4046-c7ae-4011-9a25-56819634cf7b/items
+          attempt: https://msvc-plat-data-import-stage.ss.frontlineeducation.com/api/v1/attempts/f04b4046-c7ae-4011-9a25-56819634cf7b
+          status: https://msvc-plat-data-import-stage.ss.frontlineeducation.com/api/v1/attempts/f04b4046-c7ae-4011-9a25-56819634cf7b/status
+    ImportMessageObject:
+      required:
+      - message
+      - severity
+      type: object
+      properties:
+        message:
+          type: string
+        property:
+          type: string
+          description: Property name defined during Import Type registration. This
+            is used to provide a user-friendly annotation in downloaded file.
+          nullable: true
+          example: FIRST_NAME
+        severity:
+          type: string
+        source:
+          type: string
+      example:
+        severity: severity
+        property: FIRST_NAME
+        source: source
+        message: message
+    ImportTypeConsumer:
+      required:
+      - configId
+      - consumer
+      - importTypeId
+      - name
+      type: object
+      properties:
+        configId:
+          type: string
+          example: b12878e2-683c-4158-8a21-f8827bd77c44
+        consumer:
+          $ref: '#/components/schemas/ImportTypeConsumer_consumer'
+        importTypeId:
+          type: string
+          example: a81a6d39-1d6a-400b-af23-0ef08ea2d4c3
+        name:
+          type: string
+          example: Job Type
+      example:
+        importTypeId: a81a6d39-1d6a-400b-af23-0ef08ea2d4c3
+        configId: b12878e2-683c-4158-8a21-f8827bd77c44
+        name: Job Type
+        consumer:
+          applicationMeta: {}
+          objectType: JobType
+    ImportTypeRequestBody:
+      required:
+      - data
+      type: object
+      properties:
+        data:
+          $ref: '#/components/schemas/ImportTypeRequestBody_data'
+    ImportTypeTransformSummary:
+      type: object
+      properties:
+        importTypeId:
+          type: string
+          example: 09df51a9-46c1-46ad-a46c-756165e940ec
+        name:
+          type: string
+          example: DI Consumer Success
+        description:
+          type: string
+          example: Import Type that will always consider the data to be valid during
+            psudo import
+        permissions:
+          type: array
+          items:
+            type: string
+            example: ManageImportType_DEV
+        consumer:
+          $ref: '#/components/schemas/ImportTypeTransformSummary_consumer'
+      example:
+        importTypeId: 09df51a9-46c1-46ad-a46c-756165e940ec
+        permissions:
+        - ManageImportType_DEV
+        - ManageImportType_DEV
+        name: DI Consumer Success
+        description: Import Type that will always consider the data to be valid during
+          psudo import
+        consumer:
+          processingOptions:
+            acceptValidationErrors: true
+            dryRun: true
+            partialImport: true
+          productId: pdiconsumer
+          productName: Data Importer Consumer
+    Job:
+      required:
+      - data
+      - links
+      type: object
+      properties:
+        data:
+          $ref: '#/components/schemas/Job_data'
+        links:
+          $ref: '#/components/schemas/Job_links'
+      example:
+        data:
+          attributes:
+            organizationId: organizationId
+            createdAt: {}
+            queuedAt: {}
+            importType:
+              importTypeId: importTypeId
+              permissions:
+              - permissions
+              - permissions
+              name: name
+              description: description
+              consumer: {}
+            createdBy: createdBy
+            jobMeta:
+              jobTemplateDeleted: true
+              runAt: {}
+              filename: DiConsumerSuccess-fb1e9b.csv
+              errorMessage: errorMessage
+              errorCode: ERR_FILE_NOT_PARSABLE
+              errorStatusCode: 0.80082819046101150206595775671303272247314453125
+              user:
+                firstName: firstName
+                lastName: lastName
+            latestAttempt: {}
+            importDate: {}
+            scheduledFor: {}
+            jobTemplateId: jobTemplateId
+            user:
+              firstName: firstName
+              lastName: lastName
+          id: 9b92455b-003c-4e7c-86c3-476e0698d406
+          type: importJob
+        links:
+          annotatedFileAll: https://msvc-plat-data-import.ss.frontlineeducation.com/api/v1/attempts/9b92455b-003c-4e7c-86c3-476e0698d406/annotatedfile?allItems=1
+          self: https://msvc-plat-data-import.ss.frontlineeducation.com/api/v1/jobs/9b92455b-003c-4e7c-86c3-476e0698d406
+          annotatedFile: https://msvc-plat-data-import.ss.frontlineeducation.com/api/v1/attempts/9b92455b-003c-4e7c-86c3-476e0698d406/annotatedfile
+          errors: https://msvc-plat-data-import.ss.frontlineeducation.com/api/v1/attempts/9b92455b-003c-4e7c-86c3-476e0698d406/errors
+    JobSummary:
+      required:
+      - jobId
+      - organizationId
+      type: object
+      properties:
+        jobId:
+          type: string
+        jobTemplateId:
+          type: string
+          description: if null this was not created as a recurring Import
+          nullable: true
+        jobMeta:
+          $ref: '#/components/schemas/JobMeta'
+        organizationId:
+          type: string
+        createdBy:
+          type: string
+        createdAt:
+          description: provided in UTC
+          format: date-time
+          example: {}
+        importDate:
+          description: "pseudo property calculated for UI consumption for ordering
+            \ in list views, is not stored in DB. Can be either the createdAt date
+            \ or the scheduledFor time. Primarily used for GET /jobs response"
+          format: date-time
+          example: {}
+        scheduledFor:
+          description: provided in UTC
+          format: date-time
+          nullable: true
+          example: {}
+      example:
+        organizationId: organizationId
+        jobId: jobId
+        createdAt: {}
+        jobMeta:
+          jobTemplateDeleted: true
+          runAt: {}
+          filename: DiConsumerSuccess-fb1e9b.csv
+          errorMessage: errorMessage
+          errorCode: ERR_FILE_NOT_PARSABLE
+          errorStatusCode: 0.80082819046101150206595775671303272247314453125
+          user:
+            firstName: firstName
+            lastName: lastName
+        createdBy: createdBy
+        importDate: {}
+        scheduledFor: {}
+        jobTemplateId: jobTemplateId
+    JobMeta:
+      type: object
+      properties:
+        jobTemplateDeleted:
+          type: boolean
+          description: if present the JobTemplate associated with this Job was deleted.
+        user:
+          $ref: '#/components/schemas/Job_data_attributes_user'
+        runAt:
+          description: "Date stamped when Job shell was created, before the PDI processing
+            \ occurs. Done to differentiate server-side between when it entered processing
+            \ vs when it was scheduled for Consumer Notification"
+          format: date-time
+          example: {}
+        errorCode:
+          type: string
+          description: "ERROR_CODE passed through from AWS Lambda. Primarily, used
+            \ to generate UI-friendly messaging."
+          example: ERR_FILE_NOT_PARSABLE
+        filename:
+          type: string
+          description: Filename defined in the job template that created the job
+          example: DiConsumerSuccess-fb1e9b.csv
+        errorMessage:
+          type: string
+          description: UI friendly error message text (if available)
+        errorStatusCode:
+          type: number
+          description: (For UI) StatusCode captured during initial Lambda automated-Attempt
+            creation flow.
+      example:
+        jobTemplateDeleted: true
+        runAt: {}
+        filename: DiConsumerSuccess-fb1e9b.csv
+        errorMessage: errorMessage
+        errorCode: ERR_FILE_NOT_PARSABLE
+        errorStatusCode: 0.80082819046101150206595775671303272247314453125
+        user:
+          firstName: firstName
+          lastName: lastName
+    JobTemplateResponse:
+      type: object
+      properties:
+        data:
+          $ref: '#/components/schemas/JobTemplateResponse_data'
+      example:
+        data:
+          attributes:
+            importSchedule:
+              type: daily
+              localTime: 04:01
+              ianaTimeZone: America/New_York
+            attemptMeta:
+              sampleData:
+              - - "2"
+                - "text, with comma"
+                - "83740"
+                - "TRUE"
+                - "0.123"
+                - red
+              - - "2"
+                - "text, with comma"
+                - "83740"
+                - "TRUE"
+                - "0.123"
+                - red
+              header:
+              - "[\"rowNumber\",\"String (required)\",\"Integer\",\"Boolean\",\"Float\"
+                ,\"Enum (strings RGB)\"]"
+              - "[\"rowNumber\",\"String (required)\",\"Integer\",\"Boolean\",\"Float\"
+                ,\"Enum (strings RGB)\"]"
+            isProcessing: false
+            watchedBy:
+            - USER_ID
+            - USER_ID
+            description: description
+            isActive: true
+            organizationId: organizationId
+            createdAt: {}
+            importType:
+              importTypeId: 09df51a9-46c1-46ad-a46c-756165e940ec
+              permissions:
+              - ManageImportType_DEV
+              - ManageImportType_DEV
+              name: DI Consumer Success
+              description: Import Type that will always consider the data to be valid
+                during psudo import
+              consumer:
+                processingOptions:
+                  acceptValidationErrors: true
+                  dryRun: true
+                  partialImport: true
+                productId: pdiconsumer
+                productName: Data Importer Consumer
+            sourceConfig:
+              hostname: dataimport.frontlineeducation.com
+              basename: DiConsumerSuccess-e24d32
+              type: sftp
+              dirname: pdiclient_329823
+              extname: .csv
+            createdBy: USER_ID
+            isEnabled: true
+            nextRunAt: {}
+            userConfig:
+              columnMap:
+              - fieldName: String (required)
+                property: FIRST_NAME
+                header: First Name (required)
+                type: string
+              - fieldName: String (required)
+                property: FIRST_NAME
+                header: First Name (required)
+                type: string
+              dryRun: true
+            user:
+              firstName: Firstname
+              lastName: Lastname
+          links: {}
+          id: a6f2f96d-0b2e-494d-a422-d8497d50fc86
+          type: jobTemplate
+    JobTemplate:
+      type: object
+      properties:
+        importType:
+          $ref: '#/components/schemas/ImportTypeTransformSummary'
+        description:
+          type: string
+          nullable: true
+        nextRunAt:
+          description: time that the next Job will be created from this jobTemplate
+          format: date-time
+          example: {}
+        importSchedule:
+          type: object
+          example:
+            type: daily
+            localTime: 04:01
+            ianaTimeZone: America/New_York
+          discriminator:
+            propertyName: type
+          anyOf:
+          - $ref: '#/components/schemas/JobTemplateImportScheduleDaily'
+          - $ref: '#/components/schemas/JobTemplateImportScheduleWeekly'
+          - $ref: '#/components/schemas/JobTemplateImportScheduleMonthly'
+        sourceConfig:
+          $ref: '#/components/schemas/JobTemplateSourceConfig'
+        userConfig:
+          $ref: '#/components/schemas/JobTemplateUserConfig'
+        attemptMeta:
+          $ref: '#/components/schemas/JobTemplateAttemptMeta'
+        organizationId:
+          type: string
+        isActive:
+          type: boolean
+          description: Set after sftp-file-validation is confirmed
+          example: true
+        isEnabled:
+          type: boolean
+          description: Flag for determining if the jobtemplate should be considered
+            DELETED by the user/consumer
+          example: true
+        isProcessing:
+          type: boolean
+          description: set to true while external processing occurs (i.e. AWS Lambda)
+          example: false
+        createdBy:
+          type: string
+          example: USER_ID
+        createdAt:
+          format: date-time
+          example: {}
+        user:
+          $ref: '#/components/schemas/JobTemplate_user'
+        watchedBy:
+          type: array
+          items:
+            type: string
+            example: USER_ID
+      example:
+        importSchedule:
+          type: daily
+          localTime: 04:01
+          ianaTimeZone: America/New_York
+        attemptMeta:
+          sampleData:
+          - - "2"
+            - "text, with comma"
+            - "83740"
+            - "TRUE"
+            - "0.123"
+            - red
+          - - "2"
+            - "text, with comma"
+            - "83740"
+            - "TRUE"
+            - "0.123"
+            - red
+          header:
+          - "[\"rowNumber\",\"String (required)\",\"Integer\",\"Boolean\",\"Float\"
+            ,\"Enum (strings RGB)\"]"
+          - "[\"rowNumber\",\"String (required)\",\"Integer\",\"Boolean\",\"Float\"
+            ,\"Enum (strings RGB)\"]"
+        isProcessing: false
+        watchedBy:
+        - USER_ID
+        - USER_ID
+        description: description
+        isActive: true
+        organizationId: organizationId
+        createdAt: {}
+        importType:
+          importTypeId: 09df51a9-46c1-46ad-a46c-756165e940ec
+          permissions:
+          - ManageImportType_DEV
+          - ManageImportType_DEV
+          name: DI Consumer Success
+          description: Import Type that will always consider the data to be valid
+            during psudo import
+          consumer:
+            processingOptions:
+              acceptValidationErrors: true
+              dryRun: true
+              partialImport: true
+            productId: pdiconsumer
+            productName: Data Importer Consumer
+        sourceConfig:
+          hostname: dataimport.frontlineeducation.com
+          basename: DiConsumerSuccess-e24d32
+          type: sftp
+          dirname: pdiclient_329823
+          extname: .csv
+        createdBy: USER_ID
+        isEnabled: true
+        nextRunAt: {}
+        userConfig:
+          columnMap:
+          - fieldName: String (required)
+            property: FIRST_NAME
+            header: First Name (required)
+            type: string
+          - fieldName: String (required)
+            property: FIRST_NAME
+            header: First Name (required)
+            type: string
+          dryRun: true
+        user:
+          firstName: Firstname
+          lastName: Lastname
+    JobTemplateSourceConfig:
+      type: object
+      properties:
+        type:
+          type: string
+          example: sftp
+        dirname:
+          type: string
+          example: pdiclient_329823
+        extname:
+          type: string
+          example: .csv
+        basename:
+          type: string
+          example: DiConsumerSuccess-e24d32
+        hostname:
+          type: string
+          example: dataimport.frontlineeducation.com
+      example:
+        hostname: dataimport.frontlineeducation.com
+        basename: DiConsumerSuccess-e24d32
+        type: sftp
+        dirname: pdiclient_329823
+        extname: .csv
+    JobTemplateUserConfig:
+      type: object
+      properties:
+        dryRun:
+          type: boolean
+          description: jobTemplates do not currently support dryRun's
+        columnMap:
+          type: array
+          items:
+            $ref: '#/components/schemas/JobTemplateUserConfig_columnMap'
+      nullable: true
+      example:
+        columnMap:
+        - fieldName: String (required)
+          property: FIRST_NAME
+          header: First Name (required)
+          type: string
+        - fieldName: String (required)
+          property: FIRST_NAME
+          header: First Name (required)
+          type: string
+        dryRun: true
+    JobTemplateAttemptMeta:
+      type: object
+      properties:
+        header:
+          type: array
+          items:
+            type: string
+            example: "[\"rowNumber\",\"String (required)\",\"Integer\",\"Boolean\"
+              ,\"Float\",\"Enum (strings RGB)\"]"
+        sampleData:
+          type: array
+          items:
+            type: array
+            example:
+            - "2"
+            - "text, with comma"
+            - "83740"
+            - "TRUE"
+            - "0.123"
+            - red
+            items:
+              type: string
+      nullable: true
+      example:
+        sampleData:
+        - - "2"
+          - "text, with comma"
+          - "83740"
+          - "TRUE"
+          - "0.123"
+          - red
+        - - "2"
+          - "text, with comma"
+          - "83740"
+          - "TRUE"
+          - "0.123"
+          - red
+        header:
+        - "[\"rowNumber\",\"String (required)\",\"Integer\",\"Boolean\",\"Float\"
+          ,\"Enum (strings RGB)\"]"
+        - "[\"rowNumber\",\"String (required)\",\"Integer\",\"Boolean\",\"Float\"
+          ,\"Enum (strings RGB)\"]"
+    JobTemplateImportScheduleBase:
+      required:
+      - ianaTimeZone
+      - localTime
+      - type
+      type: object
+      properties:
+        type:
+          type: string
+          example: daily
+        localTime:
+          type: string
+          example: 04:01
+        ianaTimeZone:
+          type: string
+          example: America/New_York
+      description: UI Contract for configuring the ImportSchedule.
+    JobTemplateImportScheduleDaily:
+      allOf:
+      - $ref: '#/components/schemas/JobTemplateImportScheduleBase'
+      - required:
+        - localTime
+        - type
+        type: object
+        properties:
+          type:
+            type: string
+            example: daily
+          localTime:
+            type: string
+            example: "630"
+    JobTemplateImportScheduleWeekly:
+      allOf:
+      - $ref: '#/components/schemas/JobTemplateImportScheduleBase'
+      - required:
+        - days
+        - type
+        type: object
+        properties:
+          type:
+            type: string
+            example: weekly
+          days:
+            type: array
+            items:
+              maximum: 7
+              minimum: 1
+              type: integer
+    JobTemplateImportScheduleMonthly:
+      allOf:
+      - $ref: '#/components/schemas/JobTemplateImportScheduleBase'
+      - required:
+        - day
+        - nth
+        - type
+        type: object
+        properties:
+          type:
+            type: string
+            example: monthly
+          day:
+            maximum: 7
+            minimum: 1
+            type: integer
+            example: 1
+          nth:
+            maximum: 4
+            minimum: 0
+            type: integer
+            example: 1
+    JobTemplateWatchersResponse:
+      type: object
+      properties:
+        meta:
+          $ref: '#/components/schemas/JobTemplateWatchersResponse_meta'
+        data:
+          $ref: '#/components/schemas/JobTemplateWatchersResponse_data'
+      example:
+        data:
+          attributes:
+            watchers:
+            - firstName: Stephen
+              lastName: Smith
+              email: mrbojangles@frontlineeducationorganizationemail.com
+            - firstName: Stephen
+              lastName: Smith
+              email: mrbojangles@frontlineeducationorganizationemail.com
+          links: {}
+          id: a6f2f96d-0b2e-494d-a422-d8497d50fc86
+          type: jobTemplateWatchers
+        meta:
+          count: 1
+          isUserWatching: false
+    JobTemplateWatchers:
+      type: object
+      properties:
+        watchers:
+          type: array
+          items:
+            $ref: '#/components/schemas/JobTemplateWatchers_watchers'
+      example:
+        watchers:
+        - firstName: Stephen
+          lastName: Smith
+          email: mrbojangles@frontlineeducationorganizationemail.com
+        - firstName: Stephen
+          lastName: Smith
+          email: mrbojangles@frontlineeducationorganizationemail.com
+    OrganizationFeatures:
+      required:
+      - data
+      type: object
+      properties:
+        meta:
+          $ref: '#/components/schemas/OrganizationFeatures_meta'
+        data:
+          $ref: '#/components/schemas/OrganizationFeatures_data'
+      example:
+        data:
+          attributes:
+            scheduledImports: true
+          id: "123456"
+          type: organization
+        meta:
+          error: error
+    StatusRequestBody:
+      type: object
+      properties:
+        data:
+          $ref: '#/components/schemas/StatusRequestBody_data'
+      example: "{\n  \"data\": {\n    \"status\": \"import-in-progress\",\n    \"
+        itemsProcessed\": [\n      {\n        \"itemId\": \"3b22a377-5379-422d-a5fd-08a8eb41dbdd\"
+        ,\n        \"status\": \"item-import-success\",\n        \"messages\": []\n
+        \      },\n      {\n        \"itemId\": \"0986f351-7311-4871-8402-8e58551e93ef\"
+        ,\n        \"status\": \"item-import-error\",\n        \"messages\": [\"Some
+        \ error text from consumer. Will be seen as an error\"]\n      },\n      {\n
+        \        \"itemId\": \"84d7c815-f02a-4672-a263-7238e0f9f1b0\",\n        \"
+        status\": \"item-import-not-imported\",\n        \"messages\": [{\n      
+        \    \"message\": \"First Name not imported because First Name is required.\"
+        ,\n          \"property\": \"FIRST_NAME\",\n          \"severity\": \"item-status-message-error\"
+        ,\n          \"source\": \"client_credential\"\n        }]\n      }\n    ]\n
+        \  }\n}"
+    body:
+      type: object
+      properties:
+        dryRun:
+          type: boolean
+        notifyConsumer:
+          type: boolean
+    apiv1attemptsattemptId_data_attributes:
+      type: object
+      properties:
+        userConfig:
+          type: object
+    apiv1attemptsattemptId_data:
+      type: object
+      properties:
+        attributes:
+          $ref: '#/components/schemas/apiv1attemptsattemptId_data_attributes'
+    body_1:
+      properties:
+        data:
+          $ref: '#/components/schemas/apiv1attemptsattemptId_data'
+    body_2:
+      properties:
+        awsRequestId:
+          type: string
+        messageId:
+          type: string
+    apiv1jobs_user:
+      type: object
+      properties:
+        firstName:
+          type: string
+        lastName:
+          type: string
+    body_3:
+      required:
+      - importTypeId
+      type: object
+      properties:
+        importTypeId:
+          type: string
+        scheduledFor:
+          type: string
+        user:
+          $ref: '#/components/schemas/apiv1jobs_user'
+    body_4:
+      type: object
+      properties:
+        scheduledFor:
+          type: string
+    inline_response_200:
+      type: object
+      properties:
+        data:
+          $ref: '#/components/schemas/inline_response_200_data'
+      example:
+        data:
+          items:
+          - {}
+          - {}
+    inline_response_200_1:
+      type: object
+      properties:
+        attemptId:
+          type: string
+        statusCode:
+          type: integer
+        statusText:
+          type: string
+      example:
+        statusText: statusText
+        attemptId: attemptId
+        statusCode: 0
+    Attempt_data_attributes:
+      required:
+      - createdBy
+      - file
+      - itemCountError
+      - itemCountSuccess
+      - itemCountTotal
+      - status
+      type: object
+      properties:
+        createdBy:
+          type: string
+          example: USER_ID
+        createdAt:
+          description: provided in UTC
+          format: date-time
+          example: {}
+        file:
+          type: object
+        itemCountError:
+          type: integer
+          nullable: true
+          example: 1
+        itemCountSuccess:
+          type: integer
+          nullable: true
+          example: 9
+        itemCountTotal:
+          type: integer
+          nullable: true
+          example: 10
+        status:
+          type: string
+      example:
+        itemCountError: 1
+        createdAt: {}
+        file: {}
+        createdBy: USER_ID
+        itemCountTotal: 10
+        itemCountSuccess: 9
+        status: status
+    Attempt_data:
+      required:
+      - attributes
+      - id
+      - type
+      type: object
+      properties:
+        attributes:
+          $ref: '#/components/schemas/Attempt_data_attributes'
+        id:
+          type: string
+          example: 9b92455b-003c-4e7c-86c3-476e0698d406
+        type:
+          type: string
+          example: importAttempt
+      example:
+        attributes:
+          itemCountError: 1
+          createdAt: {}
+          file: {}
+          createdBy: USER_ID
+          itemCountTotal: 10
+          itemCountSuccess: 9
+          status: status
+        id: 9b92455b-003c-4e7c-86c3-476e0698d406
+        type: importAttempt
+    Attempt_links:
+      required:
+      - importType
+      - items
+      - self
+      - status
+      type: object
+      properties:
+        importType:
+          type: string
+          example: https://msvc-plat-data-import.ss.frontlineeducation.com/api/v1/importtypes/a81a6d39-1d6a-400b-af23-0ef08ea2d4c3
+        items:
+          type: string
+          example: https://msvc-plat-data-import.ss.frontlineeducation.com/api/v1/attempts/9b92455b-003c-4e7c-86c3-476e0698d406/items
+        self:
+          type: string
+          example: https://msvc-plat-data-import.ss.frontlineeducation.com/api/v1/attempts/9b92455b-003c-4e7c-86c3-476e0698d406
+        status:
+          type: string
+          example: https://msvc-plat-data-import.ss.frontlineeducation.com/api/v1/attempts/9b92455b-003c-4e7c-86c3-476e0698d406/status
+      example:
+        importType: https://msvc-plat-data-import.ss.frontlineeducation.com/api/v1/importtypes/a81a6d39-1d6a-400b-af23-0ef08ea2d4c3
+        self: https://msvc-plat-data-import.ss.frontlineeducation.com/api/v1/attempts/9b92455b-003c-4e7c-86c3-476e0698d406
+        items: https://msvc-plat-data-import.ss.frontlineeducation.com/api/v1/attempts/9b92455b-003c-4e7c-86c3-476e0698d406/items
+        status: https://msvc-plat-data-import.ss.frontlineeducation.com/api/v1/attempts/9b92455b-003c-4e7c-86c3-476e0698d406/status
+    Attempt_meta:
+      type: object
+      properties:
+        importType:
+          $ref: '#/components/schemas/ImportTypeConsumer'
+        job:
+          $ref: '#/components/schemas/JobSummary'
+      example:
+        importType:
+          importTypeId: a81a6d39-1d6a-400b-af23-0ef08ea2d4c3
+          configId: b12878e2-683c-4158-8a21-f8827bd77c44
+          name: Job Type
+          consumer:
+            applicationMeta: {}
+            objectType: JobType
+        job:
+          organizationId: organizationId
+          jobId: jobId
+          createdAt: {}
+          jobMeta:
+            jobTemplateDeleted: true
+            runAt: {}
+            filename: DiConsumerSuccess-fb1e9b.csv
+            errorMessage: errorMessage
+            errorCode: ERR_FILE_NOT_PARSABLE
+            errorStatusCode: 0.80082819046101150206595775671303272247314453125
+            user:
+              firstName: firstName
+              lastName: lastName
+          createdBy: createdBy
+          importDate: {}
+          scheduledFor: {}
+          jobTemplateId: jobTemplateId
+    AttemptErrorSingle_attributes:
+      required:
+      - messages
+      - rowNumber
+      type: object
+      properties:
+        messages:
+          type: array
+          items:
+            type: string
+        rowNumber:
+          type: integer
+      example:
+        messages:
+        - messages
+        - messages
+        rowNumber: 0
+    AttemptErrors_links:
+      type: object
+      properties:
+        self:
+          type: string
+      example:
+        self: self
+    AttemptErrors_meta:
+      type: object
+      properties:
+        attemptId:
+          type: string
+        totalErrors:
+          type: integer
+      example:
+        totalErrors: 6
+        attemptId: attemptId
+    AttemptItemSingle_attributes:
+      required:
+      - rowNumber
+      - status
+      type: object
+      properties:
+        status:
+          type: string
+          example: item-import-success
+        rowNumber:
+          type: integer
+          example: 2
+        value:
+          type: object
+          example:
+            firstName: Bob
+            lastName: Smith
+            age: 54
+            employee: true
+        valueRaw:
+          type: object
+          example:
+            firstName: Bob
+            lastName: Smith
+            age: "54"
+            employee: "Y"
+        messages:
+          type: array
+          items:
+            $ref: '#/components/schemas/ImportMessageObject'
+      example:
+        valueRaw:
+          firstName: Bob
+          lastName: Smith
+          age: "54"
+          employee: "Y"
+        messages:
+        - severity: severity
+          property: FIRST_NAME
+          source: source
+          message: message
+        - severity: severity
+          property: FIRST_NAME
+          source: source
+          message: message
+        rowNumber: 2
+        value:
+          firstName: Bob
+          lastName: Smith
+          age: 54
+          employee: true
+        status: item-import-success
+    AttemptItems_meta:
+      type: object
+      properties:
+        attemptId:
+          type: string
+          example: f04b4046-c7ae-4011-9a25-56819634cf7b
+        itemsCount:
+          type: integer
+          example: 1
+        itemsCountErrors:
+          type: integer
+          nullable: true
+          example: 1
+        importType:
+          $ref: '#/components/schemas/ImportTypeConsumer'
+        organizationId:
+          type: string
+          example: "123456"
+      example:
+        organizationId: "123456"
+        importType:
+          importTypeId: a81a6d39-1d6a-400b-af23-0ef08ea2d4c3
+          configId: b12878e2-683c-4158-8a21-f8827bd77c44
+          name: Job Type
+          consumer:
+            applicationMeta: {}
+            objectType: JobType
+        itemsCountErrors: 1
+        itemsCount: 1
+        attemptId: f04b4046-c7ae-4011-9a25-56819634cf7b
+    AttemptItems_links:
+      required:
+      - self
+      type: object
+      properties:
+        status:
+          type: string
+          example: https://msvc-plat-data-import-stage.ss.frontlineeducation.com/api/v1/attempts/f04b4046-c7ae-4011-9a25-56819634cf7b/status
+        attempt:
+          type: string
+          example: https://msvc-plat-data-import-stage.ss.frontlineeducation.com/api/v1/attempts/f04b4046-c7ae-4011-9a25-56819634cf7b
+        unreported:
+          type: string
+          example: https://msvc-plat-data-import-stage.ss.frontlineeducation.com/api/v1/attempts/f04b4046-c7ae-4011-9a25-56819634cf7b/items?unreported=true
+        importType:
+          type: string
+          example: https://msvc-plat-data-import-stage.ss.frontlineeducation.com/api/v1/importtypes/5821ff9a-2cb5-4f3b-b460-d8dcf6876e7d?configId=92df7324-8a07-4a10-b280-bed4d7ac92ef
+        self:
+          type: string
+          example: https://msvc-plat-data-import-stage.ss.frontlineeducation.com/api/v1/attempts/f04b4046-c7ae-4011-9a25-56819634cf7b/items
+      example:
+        importType: https://msvc-plat-data-import-stage.ss.frontlineeducation.com/api/v1/importtypes/5821ff9a-2cb5-4f3b-b460-d8dcf6876e7d?configId=92df7324-8a07-4a10-b280-bed4d7ac92ef
+        unreported: https://msvc-plat-data-import-stage.ss.frontlineeducation.com/api/v1/attempts/f04b4046-c7ae-4011-9a25-56819634cf7b/items?unreported=true
+        self: https://msvc-plat-data-import-stage.ss.frontlineeducation.com/api/v1/attempts/f04b4046-c7ae-4011-9a25-56819634cf7b/items
+        attempt: https://msvc-plat-data-import-stage.ss.frontlineeducation.com/api/v1/attempts/f04b4046-c7ae-4011-9a25-56819634cf7b
+        status: https://msvc-plat-data-import-stage.ss.frontlineeducation.com/api/v1/attempts/f04b4046-c7ae-4011-9a25-56819634cf7b/status
+    ImportTypeConsumer_consumer:
+      required:
+      - applicationMeta
+      - objectType
+      type: object
+      properties:
+        applicationMeta:
+          type: object
+        objectType:
+          type: string
+          example: JobType
+      example:
+        applicationMeta: {}
+        objectType: JobType
+    ImportTypeRequestBody_data_attributes_consumer_processingOptions:
+      type: object
+      properties:
+        acceptValidationErrors:
+          type: boolean
+          description: The consumer is capable of processing errors found by the Data
+            Importer. If disabled (false) the Data Importer will not notify the consumer
+            in the event there are errors found during initial validation.
+        dryRun:
+          type: boolean
+          description: The consumer is able to perform a validate-only step during
+            the import process in which errors are reported but the data is not imported.
+        partialImport:
+          type: boolean
+          description: The consuming product supports the partial import of successful
+            items rather than requiring all items to be successful for the entire
+            attempt to be imported.
+      description: The configuration of available processing options for a particular
+        import type
+    ImportTypeRequestBody_data_attributes_consumer:
+      required:
+      - objectType
+      - productId
+      - url
+      type: object
+      properties:
+        applicationMeta:
+          type: object
+        objectType:
+          type: string
+        processingOptions:
+          $ref: '#/components/schemas/ImportTypeRequestBody_data_attributes_consumer_processingOptions'
+        productId:
+          type: string
+          description: The productId of the associated consumer application
+          example: pdiconsumer
+        url:
+          type: string
+          description: The URL of the consumer API endpoint to POST to
+          example: https://consumerapp.flqa.net/api/imports
+    ImportTypeRequestBody_data_attributes_valueConstraints:
+      type: object
+      properties:
+        error:
+          type: string
+        type:
+          type: string
+        value:
+          $ref: '#/components/schemas/AnyValue'
+    ImportTypeRequestBody_data_attributes_fields:
+      required:
+      - aliasNames
+      - fieldName
+      - property
+      - type
+      type: object
+      properties:
+        aliasNames:
+          type: array
+          description: Possible aliases for this field name
+          example:
+          - fname
+          - firstName
+          - first_name
+          - GivenName
+          items:
+            type: string
+          default: []
+        defaultValue:
+          type: string
+          description: The default value for a field if empty
+          example: ""
+        description:
+          type: string
+          description: The description of a field
+          example: The first name of an employee
+        fieldName:
+          type: string
+          description: The name of a field
+          example: First Name
+        property:
+          type: string
+          description: The name of the key in the parsed JSON result
+          example: firstName
+        type:
+          type: string
+          description: The coersion target type for the field value
+          example: string
+        valueConstraints:
+          type: array
+          items:
+            $ref: '#/components/schemas/ImportTypeRequestBody_data_attributes_valueConstraints'
+          default: []
+    ImportTypeRequestBody_data_attributes:
+      required:
+      - consumer
+      - description
+      - fields
+      - name
+      - permissions
+      type: object
+      properties:
+        consumer:
+          $ref: '#/components/schemas/ImportTypeRequestBody_data_attributes_consumer'
+        description:
+          type: string
+          description: The import type description
+          example: The import type description
+        fields:
+          type: array
+          items:
+            $ref: '#/components/schemas/ImportTypeRequestBody_data_attributes_fields'
+        name:
+          type: string
+          description: The import type name
+          example: Employees
+        permissions:
+          minItems: 1
+          type: array
+          description: list of required permittedAction permissions the user must
+            have to interact with importtype
+          items:
+            type: string
+    ImportTypeRequestBody_data:
+      required:
+      - attributes
+      type: object
+      properties:
+        attributes:
+          $ref: '#/components/schemas/ImportTypeRequestBody_data_attributes'
+    ImportTypeTransformSummary_consumer_processingOptions:
+      type: object
+      properties:
+        acceptValidationErrors:
+          type: boolean
+          example: true
+        dryRun:
+          type: boolean
+          example: true
+        partialImport:
+          type: boolean
+          example: true
+      description: Features of the DI that the Consumer supports
+      example:
+        acceptValidationErrors: true
+        dryRun: true
+        partialImport: true
+    ImportTypeTransformSummary_consumer:
+      type: object
+      properties:
+        productId:
+          type: string
+          example: pdiconsumer
+        productName:
+          type: string
+          description: Human-readable display value of the "product/grouping" to show
+            in UI for selecting Import Type
+          example: Data Importer Consumer
+        processingOptions:
+          $ref: '#/components/schemas/ImportTypeTransformSummary_consumer_processingOptions'
+      example:
+        processingOptions:
+          acceptValidationErrors: true
+          dryRun: true
+          partialImport: true
+        productId: pdiconsumer
+        productName: Data Importer Consumer
+    Job_data_attributes_importType:
+      type: object
+      properties:
+        consumer:
+          type: object
+        description:
+          type: string
+        importTypeId:
+          type: string
+        name:
+          type: string
+        permissions:
+          type: array
+          items:
+            type: string
+      example:
+        importTypeId: importTypeId
+        permissions:
+        - permissions
+        - permissions
+        name: name
+        description: description
+        consumer: {}
+    Job_data_attributes_user:
+      type: object
+      properties:
+        firstName:
+          type: string
+          nullable: true
+        lastName:
+          type: string
+          nullable: true
+      example:
+        firstName: firstName
+        lastName: lastName
+    Job_data_attributes:
+      required:
+      - createdAt
+      - createdBy
+      - organizationId
+      - scheduledFor
+      type: object
+      properties:
+        importType:
+          $ref: '#/components/schemas/Job_data_attributes_importType'
+        latestAttempt:
+          type: object
+          nullable: true
+        organizationId:
+          type: string
+        createdBy:
+          type: string
+        createdAt:
+          description: provided in UTC
+          format: date-time
+          example: {}
+        importDate:
+          description: provided in UTC
+          format: date-time
+          example: {}
+        jobTemplateId:
+          type: string
+          nullable: true
+        jobMeta:
+          $ref: '#/components/schemas/JobMeta'
+        scheduledFor:
+          description: provided in UTC
+          format: date-time
+          nullable: true
+          example: {}
+        queuedAt:
+          description: provided in UTC
+          format: date-time
+          nullable: true
+          example: {}
+        user:
+          $ref: '#/components/schemas/Job_data_attributes_user'
+      example:
+        organizationId: organizationId
+        createdAt: {}
+        queuedAt: {}
+        importType:
+          importTypeId: importTypeId
+          permissions:
+          - permissions
+          - permissions
+          name: name
+          description: description
+          consumer: {}
+        createdBy: createdBy
+        jobMeta:
+          jobTemplateDeleted: true
+          runAt: {}
+          filename: DiConsumerSuccess-fb1e9b.csv
+          errorMessage: errorMessage
+          errorCode: ERR_FILE_NOT_PARSABLE
+          errorStatusCode: 0.80082819046101150206595775671303272247314453125
+          user:
+            firstName: firstName
+            lastName: lastName
+        latestAttempt: {}
+        importDate: {}
+        scheduledFor: {}
+        jobTemplateId: jobTemplateId
+        user:
+          firstName: firstName
+          lastName: lastName
+    Job_data:
+      required:
+      - attributes
+      - id
+      - type
+      type: object
+      properties:
+        attributes:
+          $ref: '#/components/schemas/Job_data_attributes'
+        id:
+          type: string
+          example: 9b92455b-003c-4e7c-86c3-476e0698d406
+        type:
+          type: string
+          example: importJob
+      example:
+        attributes:
+          organizationId: organizationId
+          createdAt: {}
+          queuedAt: {}
+          importType:
+            importTypeId: importTypeId
+            permissions:
+            - permissions
+            - permissions
+            name: name
+            description: description
+            consumer: {}
+          createdBy: createdBy
+          jobMeta:
+            jobTemplateDeleted: true
+            runAt: {}
+            filename: DiConsumerSuccess-fb1e9b.csv
+            errorMessage: errorMessage
+            errorCode: ERR_FILE_NOT_PARSABLE
+            errorStatusCode: 0.80082819046101150206595775671303272247314453125
+            user:
+              firstName: firstName
+              lastName: lastName
+          latestAttempt: {}
+          importDate: {}
+          scheduledFor: {}
+          jobTemplateId: jobTemplateId
+          user:
+            firstName: firstName
+            lastName: lastName
+        id: 9b92455b-003c-4e7c-86c3-476e0698d406
+        type: importJob
+    Job_links:
+      required:
+      - self
+      type: object
+      properties:
+        annotatedFile:
+          type: string
+          example: https://msvc-plat-data-import.ss.frontlineeducation.com/api/v1/attempts/9b92455b-003c-4e7c-86c3-476e0698d406/annotatedfile
+        annotatedFileAll:
+          type: string
+          example: https://msvc-plat-data-import.ss.frontlineeducation.com/api/v1/attempts/9b92455b-003c-4e7c-86c3-476e0698d406/annotatedfile?allItems=1
+        errors:
+          type: string
+          example: https://msvc-plat-data-import.ss.frontlineeducation.com/api/v1/attempts/9b92455b-003c-4e7c-86c3-476e0698d406/errors
+        self:
+          type: string
+          example: https://msvc-plat-data-import.ss.frontlineeducation.com/api/v1/jobs/9b92455b-003c-4e7c-86c3-476e0698d406
+      example:
+        annotatedFileAll: https://msvc-plat-data-import.ss.frontlineeducation.com/api/v1/attempts/9b92455b-003c-4e7c-86c3-476e0698d406/annotatedfile?allItems=1
+        self: https://msvc-plat-data-import.ss.frontlineeducation.com/api/v1/jobs/9b92455b-003c-4e7c-86c3-476e0698d406
+        annotatedFile: https://msvc-plat-data-import.ss.frontlineeducation.com/api/v1/attempts/9b92455b-003c-4e7c-86c3-476e0698d406/annotatedfile
+        errors: https://msvc-plat-data-import.ss.frontlineeducation.com/api/v1/attempts/9b92455b-003c-4e7c-86c3-476e0698d406/errors
+    JobTemplateResponse_data:
+      type: object
+      properties:
+        type:
+          type: string
+          example: jobTemplate
+        id:
+          type: string
+          example: a6f2f96d-0b2e-494d-a422-d8497d50fc86
+        attributes:
+          $ref: '#/components/schemas/JobTemplate'
+        links:
+          type: object
+      example:
+        attributes:
+          importSchedule:
+            type: daily
+            localTime: 04:01
+            ianaTimeZone: America/New_York
+          attemptMeta:
+            sampleData:
+            - - "2"
+              - "text, with comma"
+              - "83740"
+              - "TRUE"
+              - "0.123"
+              - red
+            - - "2"
+              - "text, with comma"
+              - "83740"
+              - "TRUE"
+              - "0.123"
+              - red
+            header:
+            - "[\"rowNumber\",\"String (required)\",\"Integer\",\"Boolean\",\"Float\"
+              ,\"Enum (strings RGB)\"]"
+            - "[\"rowNumber\",\"String (required)\",\"Integer\",\"Boolean\",\"Float\"
+              ,\"Enum (strings RGB)\"]"
+          isProcessing: false
+          watchedBy:
+          - USER_ID
+          - USER_ID
+          description: description
+          isActive: true
+          organizationId: organizationId
+          createdAt: {}
+          importType:
+            importTypeId: 09df51a9-46c1-46ad-a46c-756165e940ec
+            permissions:
+            - ManageImportType_DEV
+            - ManageImportType_DEV
+            name: DI Consumer Success
+            description: Import Type that will always consider the data to be valid
+              during psudo import
+            consumer:
+              processingOptions:
+                acceptValidationErrors: true
+                dryRun: true
+                partialImport: true
+              productId: pdiconsumer
+              productName: Data Importer Consumer
+          sourceConfig:
+            hostname: dataimport.frontlineeducation.com
+            basename: DiConsumerSuccess-e24d32
+            type: sftp
+            dirname: pdiclient_329823
+            extname: .csv
+          createdBy: USER_ID
+          isEnabled: true
+          nextRunAt: {}
+          userConfig:
+            columnMap:
+            - fieldName: String (required)
+              property: FIRST_NAME
+              header: First Name (required)
+              type: string
+            - fieldName: String (required)
+              property: FIRST_NAME
+              header: First Name (required)
+              type: string
+            dryRun: true
+          user:
+            firstName: Firstname
+            lastName: Lastname
+        links: {}
+        id: a6f2f96d-0b2e-494d-a422-d8497d50fc86
+        type: jobTemplate
+    JobTemplate_user:
+      type: object
+      properties:
+        firstName:
+          type: string
+          nullable: true
+          example: Firstname
+        lastName:
+          type: string
+          nullable: true
+          example: Lastname
+      example:
+        firstName: Firstname
+        lastName: Lastname
+    JobTemplateUserConfig_columnMap:
+      type: object
+      properties:
+        header:
+          type: string
+          example: First Name (required)
+        fieldName:
+          type: string
+          nullable: true
+          example: String (required)
+        property:
+          type: string
+          description: Only has value if a matching Field or Alias is found in Import
+            Type Config's "fields" array. Key provided by Consumer that we will map
+            this value to in the Item object.
+          nullable: true
+          example: FIRST_NAME
+        type:
+          type: string
+          example: string
+      example:
+        fieldName: String (required)
+        property: FIRST_NAME
+        header: First Name (required)
+        type: string
+    JobTemplateWatchersResponse_meta:
+      type: object
+      properties:
+        isUserWatching:
+          type: boolean
+          example: false
+        count:
+          type: integer
+          example: 1
+      example:
+        count: 1
+        isUserWatching: false
+    JobTemplateWatchersResponse_data:
+      type: object
+      properties:
+        type:
+          type: string
+          example: jobTemplateWatchers
+        id:
+          type: string
+          example: a6f2f96d-0b2e-494d-a422-d8497d50fc86
+        attributes:
+          $ref: '#/components/schemas/JobTemplateWatchers'
+        links:
+          type: object
+      example:
+        attributes:
+          watchers:
+          - firstName: Stephen
+            lastName: Smith
+            email: mrbojangles@frontlineeducationorganizationemail.com
+          - firstName: Stephen
+            lastName: Smith
+            email: mrbojangles@frontlineeducationorganizationemail.com
+        links: {}
+        id: a6f2f96d-0b2e-494d-a422-d8497d50fc86
+        type: jobTemplateWatchers
+    JobTemplateWatchers_watchers:
+      type: object
+      properties:
+        firstName:
+          type: string
+          nullable: true
+          example: Stephen
+        lastName:
+          type: string
+          nullable: true
+          example: Smith
+        email:
+          type: string
+          nullable: true
+          example: mrbojangles@frontlineeducationorganizationemail.com
+      example:
+        firstName: Stephen
+        lastName: Smith
+        email: mrbojangles@frontlineeducationorganizationemail.com
+    OrganizationFeatures_meta:
+      type: object
+      properties:
+        error:
+          type: string
+          description: For possible statuses in sftp lambda svc serverless/services/sftp/src/sftp.ts
+      example:
+        error: error
+    OrganizationFeatures_data_attributes:
+      type: object
+      properties:
+        scheduledImports:
+          type: boolean
+      example:
+        scheduledImports: true
+    OrganizationFeatures_data:
+      required:
+      - attributes
+      - id
+      - type
+      type: object
+      properties:
+        type:
+          type: string
+          example: organization
+        id:
+          type: string
+          description: FL Organization Id
+          example: "123456"
+        attributes:
+          $ref: '#/components/schemas/OrganizationFeatures_data_attributes'
+      example:
+        attributes:
+          scheduledImports: true
+        id: "123456"
+        type: organization
+    StatusRequestBody_data_itemsProcessed:
+      required:
+      - itemId
+      - status
+      type: object
+      properties:
+        itemId:
+          type: string
+          description: itemId (uuid) generated by DI on each retrieved Import Item
+            (roughly corresponds to a row)
+          example: a986213b-9c01-4c55-a47d-565ed63271c3
+        messages:
+          type: array
+          description: "(optional) If provided this is captured as an error to be
+            \ appened next to the Import Item. If not provided it is up to consumer
+            \ to provide more detail in the messaging about a given error. __Anything
+            \ reported as a bare string will be considered a severity error, and apply
+            \ to the whole line, w/o a designated property.__"
+          example: "[{\n  \"message\": \"Error reported for property FIRST_NAME\"
+            ,\n  \"property\": \"FIRST_NAME\",\n  \"severity\": \"item-status-message-error\"
+            ,\n  \"source\": \"client_credential\"\n}] ]"
+          items:
+            anyOf:
+            - type: string
+            - $ref: '#/components/schemas/ImportMessageObject'
+        status:
+          type: string
+    StatusRequestBody_data:
+      required:
+      - status
+      type: object
+      properties:
+        itemsProcessed:
+          type: array
+          description: Possible aliases for this field name
+          items:
+            $ref: '#/components/schemas/StatusRequestBody_data_itemsProcessed'
+        status:
+          type: string
+    inline_response_200_data:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            type: object
+      example:
+        items:
+        - {}
+        - {}
+  requestBodies:
+    Data:
+      content:
+        application/json:
+          schema:
+            type: object
+      required: true
+    ImportTypeRequestBody:
+      description: The import type definition
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ImportTypeRequestBody'
+      required: true
+  securitySchemes:
+    Bearer:
+      type: apiKey
+      description: Must be entered as `Bearer tokenGoesHere`
+      name: authorization
+      in: header
+    OrgIdQueryParam:
+      type: apiKey
+      description: Only used as a temporary
+      name: organizationId
+      in: query

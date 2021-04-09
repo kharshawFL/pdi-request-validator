@@ -1,0 +1,33 @@
+{
+  "name": "platform-data-importer-api",
+  "version": "1.0.0",
+  "description": "For consumers of the Platform Data Importer",
+  "main": "index.js",
+  "scripts": {
+    "prestart": "npm install",
+    "start": "nodemon index.js"
+  },
+  "keywords": [
+    "swagger"
+  ],
+  "license": "Unlicense",
+  "private": true,
+  "dependencies": {
+    "cors": "^2.8.5",
+    "express": "^4.17.1",
+    "express-openapi-validator": "^4.12.7",
+    "js-yaml": "^3.3.0",
+    "swagger-ui-express": "^4.1.6",
+    "yamljs": "^0.3.0"
+  },
+  "nodemonConfig": {
+    "delay": "2500",
+    "ignore": [
+      "*.md",
+      "sample/**/*.json"
+    ]
+  },
+  "devDependencies": {
+    "nodemon": "^2.0.7"
+  }
+}
